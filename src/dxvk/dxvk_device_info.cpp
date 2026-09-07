@@ -60,6 +60,7 @@ namespace dxvk {
     HANDLE_EXT(khrMaintenance10);                  \
     HANDLE_EXT(khrMaintenance11);                  \
     HANDLE_EXT(khrPipelineLibrary);                \
+    HANDLE_EXT(khrRayQuery);                       \
     HANDLE_EXT(khrRayTracingPipeline);             \
     HANDLE_EXT(khrPresentId);                      \
     HANDLE_EXT(khrPresentId2);                     \
@@ -632,9 +633,11 @@ namespace dxvk {
     if (!m_extensionsSupported.khrDeferredHostOperations.extensionName[0])
       m_featuresSupported.khrAccelerationStructure.accelerationStructure = VK_FALSE;
 
-    // Ray tracing pipeline requires acceleration structure
-    if (!m_featuresSupported.khrAccelerationStructure.accelerationStructure)
+    // Ray tracing pipeline and ray query require acceleration structure
+    if (!m_featuresSupported.khrAccelerationStructure.accelerationStructure) {
       m_featuresSupported.khrRayTracingPipeline.rayTracingPipeline = VK_FALSE;
+      m_featuresSupported.khrRayQuery.rayQuery = VK_FALSE;
+    }
 
     // Disable debug extensions if hang debugging is disabled.
     //
@@ -913,6 +916,7 @@ namespace dxvk {
 
       ENABLE_FEATURE(vk11, shaderDrawParameters, true),
       ENABLE_FEATURE(vk11, storageBuffer16BitAccess, true),
+      ENABLE_FEATURE(vk11, uniformAndStorageBuffer16BitAccess, false),
       ENABLE_FEATURE(vk11, storagePushConstant16, false),
 
       ENABLE_FEATURE(vk12, bufferDeviceAddress, true),
@@ -1058,8 +1062,9 @@ namespace dxvk {
       ENABLE_EXT(khrDeferredHostOperations, false),
       ENABLE_EXT_FEATURE(khrAccelerationStructure, accelerationStructure, false),
 
-      /* Ray tracing pipeline */
+      /* Ray tracing pipeline & ray query */
       ENABLE_EXT_FEATURE(khrRayTracingPipeline, rayTracingPipeline, false),
+      ENABLE_EXT_FEATURE(khrRayQuery, rayQuery, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

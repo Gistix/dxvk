@@ -104,6 +104,7 @@ namespace dxvk {
     VkPhysicalDeviceMaintenance10FeaturesKHR                  khrMaintenance10                = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_FEATURES_KHR };
     VkPhysicalDeviceMaintenance11FeaturesKHR                  khrMaintenance11                = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_11_FEATURES_KHR };
     VkBool32                                                  khrPipelineLibrary              = VK_FALSE;
+    VkPhysicalDeviceRayQueryFeaturesKHR                       khrRayQuery                     = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR             khrRayTracingPipeline           = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
     VkPhysicalDevicePresentIdFeaturesKHR                      khrPresentId                    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR };
     VkPhysicalDevicePresentId2FeaturesKHR                     khrPresentId2                   = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_2_FEATURES_KHR };
@@ -185,6 +186,7 @@ namespace dxvk {
     VkExtensionProperties khrMaintenance10                  = vk::makeExtension(VK_KHR_MAINTENANCE_10_EXTENSION_NAME);
     VkExtensionProperties khrMaintenance11                  = vk::makeExtension(VK_KHR_MAINTENANCE_11_EXTENSION_NAME);
     VkExtensionProperties khrPipelineLibrary                = vk::makeExtension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME);
+    VkExtensionProperties khrRayQuery                       = vk::makeExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME);
     VkExtensionProperties khrRayTracingPipeline           = vk::makeExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     VkExtensionProperties khrPresentId                      = vk::makeExtension(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     VkExtensionProperties khrPresentId2                     = vk::makeExtension(VK_KHR_PRESENT_ID_2_EXTENSION_NAME);

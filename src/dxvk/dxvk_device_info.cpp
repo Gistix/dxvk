@@ -60,6 +60,7 @@ namespace dxvk {
     HANDLE_EXT(khrMaintenance10);                  \
     HANDLE_EXT(khrMaintenance11);                  \
     HANDLE_EXT(khrPipelineLibrary);                \
+    HANDLE_EXT(khrRayTracingPipeline);             \
     HANDLE_EXT(khrPresentId);                      \
     HANDLE_EXT(khrPresentId2);                     \
     HANDLE_EXT(khrPresentWait);                    \
@@ -99,7 +100,8 @@ namespace dxvk {
     HANDLE_EXT(khrMaintenance6);                   \
     HANDLE_EXT(khrMaintenance7);                   \
     HANDLE_EXT(khrMaintenance9);                   \
-    HANDLE_EXT(khrMaintenance10);
+    HANDLE_EXT(khrMaintenance10);                  \
+    HANDLE_EXT(khrRayTracingPipeline);
 
 
   DxvkDeviceCapabilities::DxvkDeviceCapabilities(
@@ -630,6 +632,10 @@ namespace dxvk {
     if (!m_extensionsSupported.khrDeferredHostOperations.extensionName[0])
       m_featuresSupported.khrAccelerationStructure.accelerationStructure = VK_FALSE;
 
+    // Ray tracing pipeline requires acceleration structure
+    if (!m_featuresSupported.khrAccelerationStructure.accelerationStructure)
+      m_featuresSupported.khrRayTracingPipeline.rayTracingPipeline = VK_FALSE;
+
     // Disable debug extensions if hang debugging is disabled.
     //
     // Crash analysis deliberately does NOT re-enable VK_NV_device_diagnostic_checkpoints or
@@ -1051,6 +1057,9 @@ namespace dxvk {
       /* Acceleration structure & deferred host operations */
       ENABLE_EXT(khrDeferredHostOperations, false),
       ENABLE_EXT_FEATURE(khrAccelerationStructure, accelerationStructure, false),
+
+      /* Ray tracing pipeline */
+      ENABLE_EXT_FEATURE(khrRayTracingPipeline, rayTracingPipeline, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

@@ -319,6 +319,7 @@ namespace dxvk {
 
     std::vector<Rc<DxvkImage>>  m_images;
     std::vector<PresenterSync>  m_semaphores;
+    std::vector<VkSemaphore>    m_presentSemaphores;
 
     std::vector<VkPresentModeKHR> m_dynamicModes;
 

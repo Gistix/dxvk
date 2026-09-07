@@ -447,10 +447,12 @@ namespace dxvk {
     // then hands back an index that no longer fits. Guard the .at() accesses: a stale index is treated as
     // a soft out-of-date so this present is skipped and the swapchain recreated next frame, instead of
     // throwing std::out_of_range ("invalid vector subscript") and killing the present thread.
-    if (m_imageIndex >= m_images.size() || m_frameIndex >= m_semaphores.size())
+    if (m_imageIndex >= m_images.size() || m_frameIndex >= m_semaphores.size()
+     || m_imageIndex >= m_presentSemaphores.size())
       return softError(VK_ERROR_OUT_OF_DATE_KHR);
 
     sync = m_semaphores.at(m_frameIndex);
+    sync.present = m_presentSemaphores.at(m_imageIndex);
     image = m_images.at(m_imageIndex);
 
     m_presentPending = true;
@@ -463,6 +465,9 @@ namespace dxvk {
     const Rc<DxvkLatencyTracker>& tracker,
           uint32_t                rectCount,
     const VkRectLayerKHR*         rects) {
+    if (m_imageIndex >= m_presentSemaphores.size())
+      return softError(VK_ERROR_OUT_OF_DATE_KHR);
+
     PresenterSync& currSync = m_semaphores.at(m_frameIndex);
 
     releasePresentWaitsForImage(m_swapchain, m_presentWaitSwapchainSerial, m_imageIndex);
@@ -487,7 +492,7 @@ namespace dxvk {
     // the present after external work the app submitted outside DXVK's own timeline — used by
     // Streamline DLSS-G so its evaluate/tag submissions are GPU-ordered ahead of the present
     // that reads them (pure queue sync, no CPU stall; the generated frames flash without it).
-    std::array<VkSemaphore, 2> waitSemaphores = { currSync.present, VK_NULL_HANDLE };
+    std::array<VkSemaphore, 2> waitSemaphores = { m_presentSemaphores.at(m_imageIndex), VK_NULL_HANDLE };
     uint32_t waitSemaphoreCount = 1;
 
     uint64_t extraWaitGeneration = 0;
@@ -1311,6 +1316,18 @@ namespace dxvk {
         return status;
       }
     }
+
+    m_presentSemaphores.resize(images.size());
+
+    for (uint32_t i = 0; i < images.size(); i++) {
+      VkSemaphoreCreateInfo semInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+      if ((status = m_vkd->vkCreateSemaphore(m_vkd->device(),
+          &semInfo, nullptr, &m_presentSemaphores[i]))) {
+        Logger::err(str::format("Presenter: Failed to create present semaphore: ", status));
+        return status;
+      }
+    }
     
     // Invalidate indices
     m_latencySleepSupported = m_device->features().nvLowLatency2 && latencyInfo.latencyModeEnable;
@@ -1718,6 +1735,9 @@ namespace dxvk {
     if (presentCompletionProven)
       releasePresentWaitsForSwapchain(m_swapchain, m_presentWaitSwapchainSerial);
 
+    for (const auto& sem : m_presentSemaphores)
+      m_vkd->vkDestroySemaphore(m_vkd->device(), sem, nullptr);
+
     for (const auto& sem : m_semaphores) {
       m_vkd->vkDestroySemaphore(m_vkd->device(), sem.acquire, nullptr);
       m_vkd->vkDestroySemaphore(m_vkd->device(), sem.present, nullptr);
@@ -1730,6 +1750,7 @@ namespace dxvk {
 
     m_images.clear();
     m_semaphores.clear();
+    m_presentSemaphores.clear();
     m_dynamicModes.clear();
 
     m_swapchain = VK_NULL_HANDLE;

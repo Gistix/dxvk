@@ -310,6 +310,45 @@ IDXGIVkInteropSurface : public IUnknown {
 
 
 /**
+ * \brief DXGI buffer interface for Vulkan interop
+ * 
+ * Provides access to the backing resource of a
+ * D3D11 buffer.
+ */
+MIDL_INTERFACE("b7b13df1-5364-4e94-81d3-6e3e5c9f91a0")
+IDXGIVkInteropBuffer : public IUnknown {
+  /**
+   * \brief Retrieves device interop interface
+   * 
+   * Queries the device that owns the buffer for
+   * the \ref IDXGIVkInteropDevice interface.
+   * \param [out] ppDevice The device interface
+   * \returns \c S_OK on success
+   */
+  virtual HRESULT STDMETHODCALLTYPE GetDevice(
+          IDXGIVkInteropDevice**  ppDevice) = 0;
+
+  /**
+   * \brief Retrieves Vulkan buffer info
+   * 
+   * Retrieves the underlying VkBuffer, suballocation byte offset,
+   * byte length, and GPU virtual address.
+   * Any of the given pointers may be \c nullptr.
+   * \param [out] pBuffer The buffer handle
+   * \param [out] pOffset Byte offset within the VkBuffer
+   * \param [out] pLength Byte length of the buffer slice
+   * \param [out] pGpuAddress GPU virtual address (device address)
+   * \returns \c S_OK on success
+   */
+  virtual HRESULT STDMETHODCALLTYPE GetVulkanBufferInfo(
+          VkBuffer*             pBuffer,
+          VkDeviceSize*         pOffset,
+          VkDeviceSize*         pLength,
+          VkDeviceAddress*      pGpuAddress) = 0;
+};
+
+
+/**
  * \brief DXGI device interface for Vulkan interop
  * 
  * Provides access to the device and instance handles
@@ -475,6 +514,7 @@ __CRT_UUID_DECL(IDXGIVkInteropAdapter,     0x3a6d8f2c,0xb0e8,0x4ab4,0xb4,0xdc,0x
 __CRT_UUID_DECL(IDXGIVkInteropDevice,      0xe2ef5fa5,0xdc21,0x4af7,0x90,0xc4,0xf6,0x7e,0xf6,0xa0,0x93,0x23);
 __CRT_UUID_DECL(IDXGIVkInteropDevice1,     0xe2ef5fa5,0xdc21,0x4af7,0x90,0xc4,0xf6,0x7e,0xf6,0xa0,0x93,0x24);
 __CRT_UUID_DECL(IDXGIVkInteropSurface,     0x5546cf8c,0x77e7,0x4341,0xb0,0x5d,0x8d,0x4d,0x50,0x00,0xe7,0x7d);
+__CRT_UUID_DECL(IDXGIVkInteropBuffer,      0xb7b13df1,0x5364,0x4e94,0x81,0xd3,0x6e,0x3e,0x5c,0x9f,0x91,0xa0);
 __CRT_UUID_DECL(IDXGIVkSurfaceFactory,     0x1e7895a1,0x1bc3,0x4f9c,0xa6,0x70,0x29,0x0a,0x4b,0xc9,0x58,0x1a);
 __CRT_UUID_DECL(IDXGIVkSwapChain,          0xe4a9059e,0xb569,0x46ab,0x8d,0xe7,0x50,0x1b,0xd2,0xbc,0x7f,0x7a);
 __CRT_UUID_DECL(IDXGIVkSwapChain1,         0x785326d4,0xb77b,0x4826,0xae,0x70,0x8d,0x08,0x30,0x8e,0xe6,0xd1);

@@ -44,6 +44,8 @@ namespace dxvk {
     HANDLE_EXT(extSwapchainMaintenance1);          \
     HANDLE_EXT(extTransformFeedback);              \
     HANDLE_EXT(extVertexAttributeDivisor);         \
+    HANDLE_EXT(khrAccelerationStructure);          \
+    HANDLE_EXT(khrDeferredHostOperations);         \
     HANDLE_EXT(khrDeviceFault);                    \
     HANDLE_EXT(khrDynamicRenderingLocalRead);      \
     HANDLE_EXT(khrExternalMemoryWin32);            \
@@ -624,6 +626,10 @@ namespace dxvk {
      && !m_featuresSupported.khrPresentId2.presentId2)
       m_featuresSupported.nvLowLatency2 = VK_FALSE;
 
+    // Disable acceleration structure if deferred host operations is unavailable
+    if (!m_extensionsSupported.khrDeferredHostOperations.extensionName[0])
+      m_featuresSupported.khrAccelerationStructure.accelerationStructure = VK_FALSE;
+
     // Disable debug extensions if hang debugging is disabled.
     //
     // Crash analysis deliberately does NOT re-enable VK_NV_device_diagnostic_checkpoints or
@@ -634,7 +640,6 @@ namespace dxvk {
     // has the driver record markers itself, and on AMD the driver writes the execution marker tree
     // into the .rgd dump without any help from us.
     const bool crashAnalysis = instance.debugFlags().test(DxvkDebugFlag::CrashAnalysis);
-
     if (!instance.debugFlags().test(DxvkDebugFlag::Hang)) {
       // VK_EXT_device_fault survives crash analysis: it reports the faulting address and, where the
       // driver provides one, a vendor binary blob. That is the only post-mortem artifact an ordinary
@@ -1042,6 +1047,10 @@ namespace dxvk {
       /* Vertex attribute divisor, used by client APIs */
       ENABLE_EXT_FEATURE(extVertexAttributeDivisor, vertexAttributeInstanceRateDivisor, false),
       ENABLE_EXT_FEATURE(extVertexAttributeDivisor, vertexAttributeInstanceRateZeroDivisor, false),
+
+      /* Acceleration structure & deferred host operations */
+      ENABLE_EXT(khrDeferredHostOperations, false),
+      ENABLE_EXT_FEATURE(khrAccelerationStructure, accelerationStructure, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

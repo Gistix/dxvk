@@ -44,6 +44,8 @@ namespace dxvk {
     HANDLE_EXT(extSwapchainMaintenance1);          \
     HANDLE_EXT(extTransformFeedback);              \
     HANDLE_EXT(extVertexAttributeDivisor);         \
+    HANDLE_EXT(khrAccelerationStructure);          \
+    HANDLE_EXT(khrDeferredHostOperations);         \
     HANDLE_EXT(khrDeviceFault);                    \
     HANDLE_EXT(khrDynamicRenderingLocalRead);      \
     HANDLE_EXT(khrExternalMemoryWin32);            \
@@ -635,7 +637,11 @@ namespace dxvk {
      && !m_featuresSupported.khrPresentId2.presentId2)
       m_featuresSupported.nvLowLatency2 = VK_FALSE;
 
-    // Disable debug extensions if hang debugging is disabled
+    // Disable acceleration structure if deferred host operations is unavailable
+    if (!m_extensionsSupported.khrDeferredHostOperations.extensionName[0])
+      m_featuresSupported.khrAccelerationStructure.accelerationStructure = VK_FALSE;
+
+    const bool crashAnalysis = instance.debugFlags().test(DxvkDebugFlag::CrashAnalysis);
     if (!instance.debugFlags().test(DxvkDebugFlag::Hang)) {
       m_featuresSupported.khrDeviceFault.deviceFault = VK_FALSE;
       m_featuresSupported.khrDeviceFault.deviceFaultVendorBinary = VK_FALSE;
@@ -1028,6 +1034,10 @@ namespace dxvk {
       /* Vertex attribute divisor, used by client APIs */
       ENABLE_EXT_FEATURE(extVertexAttributeDivisor, vertexAttributeInstanceRateDivisor, false),
       ENABLE_EXT_FEATURE(extVertexAttributeDivisor, vertexAttributeInstanceRateZeroDivisor, false),
+
+      /* Acceleration structure & deferred host operations */
+      ENABLE_EXT(khrDeferredHostOperations, false),
+      ENABLE_EXT_FEATURE(khrAccelerationStructure, accelerationStructure, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

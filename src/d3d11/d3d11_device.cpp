@@ -2740,6 +2740,21 @@ namespace dxvk {
   }
 
 
+  void D3D11Device::LockBuffer(
+    const Rc<DxvkBuffer>&           Buffer) {
+    if (!Buffer->canRelocate())
+      return;
+
+    auto chunk = AllocCsChunk(DxvkCsChunkFlag::SingleUse);
+
+    chunk->push([cBuffer = Buffer] (DxvkContext* ctx) {
+      ctx->ensureBufferAddress(cBuffer);
+    });
+
+    m_context->InjectCsChunk(DxvkCsQueue::HighPriority, std::move(chunk), true);
+  }
+
+
   DxvkShaderOptions D3D11Device::GetShaderOptions(
     const Rc<DxvkDevice>&             Device,
     const D3D11Options&               Options) {
@@ -3234,16 +3249,7 @@ namespace dxvk {
 
   void D3D11DeviceExt::LockBuffer(
     const Rc<DxvkBuffer>&           Buffer) {
-    if (!Buffer->canRelocate())
-      return;
-
-    auto chunk = m_device->AllocCsChunk(DxvkCsChunkFlag::SingleUse);
-
-    chunk->push([cBuffer = Buffer] (DxvkContext* ctx) {
-      ctx->ensureBufferAddress(cBuffer);
-    });
-
-    m_device->GetContext()->InjectCsChunk(DxvkCsQueue::HighPriority, std::move(chunk), true);
+    m_device->LockBuffer(Buffer);
   }
 
 

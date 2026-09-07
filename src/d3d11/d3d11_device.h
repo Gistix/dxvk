@@ -473,6 +473,9 @@ namespace dxvk {
       const Rc<DxvkImage>&            Image,
             VkImageUsageFlags         Usage);
 
+    void LockBuffer(
+      const Rc<DxvkBuffer>&           Buffer);
+
     static D3D_FEATURE_LEVEL GetMaxFeatureLevel(const DxvkDevice& Device);
     
     DxvkBarrierControlFlags GetOptionsBarrierControlFlags() {

@@ -35,6 +35,52 @@ namespace dxvk {
     uint32_t byteOffset;
   };
   
+
+  class D3D11Buffer;
+
+
+  /**
+   * \brief DXGI buffer interface for Vulkan interop
+   * 
+   * Provides access to the underlying Vulkan
+   * buffer to external Vulkan libraries.
+   */
+  class D3D11VkInteropBuffer : public IDXGIVkInteropBuffer {
+
+  public:
+
+    D3D11VkInteropBuffer(
+            ID3D11Buffer*       pResource,
+            D3D11Buffer*        pBuffer);
+
+    ~D3D11VkInteropBuffer();
+
+    ULONG STDMETHODCALLTYPE AddRef();
+
+    ULONG STDMETHODCALLTYPE Release();
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(
+            REFIID              riid,
+            void**              ppvObject);
+
+    HRESULT STDMETHODCALLTYPE GetDevice(
+            IDXGIVkInteropDevice** ppDevice);
+
+    HRESULT STDMETHODCALLTYPE GetVulkanBufferInfo(
+            VkBuffer*           pBuffer,
+            VkDeviceSize*       pOffset,
+            VkDeviceSize*       pLength,
+            VkDeviceAddress*    pGpuAddress);
+
+  private:
+
+    ID3D11Buffer*       m_resource;
+    D3D11Buffer*        m_buffer;
+
+    std::atomic<bool>   m_locked = { false };
+
+  };
+  
   
   class D3D11Buffer : public D3D11DeviceChild<ID3D11Buffer> {
     static constexpr VkDeviceSize BufferSliceAlignment = 64;
@@ -198,6 +244,7 @@ namespace dxvk {
     void*                         m_mapPtr = nullptr;
 
     D3D11DXGIResource             m_resource;
+    D3D11VkInteropBuffer          m_interop;
     D3D10Buffer                   m_d3d10;
 
     D3DDestructionNotifier        m_destructionNotifier;

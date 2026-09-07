@@ -12,6 +12,7 @@ namespace dxvk {
   : D3D11DeviceChild<ID3D11Buffer>(pDevice),
     m_desc        (*pDesc),
     m_resource    (this, pDevice),
+    m_interop     (this, this),
     m_d3d10       (this),
     m_destructionNotifier(this) {
     DxvkBufferCreateInfo info;
@@ -34,6 +35,11 @@ namespace dxvk {
       info.usage  |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
       info.stages |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
       info.access |= VK_ACCESS_INDEX_READ_BIT;
+    }
+
+    if ((pDesc->BindFlags & (D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_INDEX_BUFFER))
+     && m_parent->GetDXVKDevice()->features().khrAccelerationStructure.accelerationStructure) {
+      info.usage  |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
     }
     
     if (pDesc->BindFlags & D3D11_BIND_CONSTANT_BUFFER) {
@@ -156,6 +162,11 @@ namespace dxvk {
      || riid == __uuidof(IDXGIResource1)) {
        *ppvObject = ref(&m_resource);
        return S_OK;
+    }
+
+    if (riid == __uuidof(IDXGIVkInteropBuffer)) {
+      *ppvObject = ref(&m_interop);
+      return S_OK;
     }
 
     if (riid == __uuidof(ID3DDestructionNotifier)) {
@@ -396,6 +407,85 @@ namespace dxvk {
     return (MemFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
       ? D3D11_COMMON_BUFFER_MAP_MODE_DIRECT
       : D3D11_COMMON_BUFFER_MAP_MODE_NONE;
+  }
+
+
+  ///////////////////////////////////////////
+  //      D 3 D 1 1 V k I n t e r o p B u f f e r
+  D3D11VkInteropBuffer::D3D11VkInteropBuffer(
+          ID3D11Buffer*       pResource,
+          D3D11Buffer*        pBuffer)
+  : m_resource(pResource), m_buffer(pBuffer) {
+
+  }
+
+
+  D3D11VkInteropBuffer::~D3D11VkInteropBuffer() {
+
+  }
+
+
+  ULONG STDMETHODCALLTYPE D3D11VkInteropBuffer::AddRef() {
+    return m_resource->AddRef();
+  }
+
+
+  ULONG STDMETHODCALLTYPE D3D11VkInteropBuffer::Release() {
+    return m_resource->Release();
+  }
+
+
+  HRESULT STDMETHODCALLTYPE D3D11VkInteropBuffer::QueryInterface(
+          REFIID              riid,
+          void**              ppvObject) {
+    return m_resource->QueryInterface(riid, ppvObject);
+  }
+
+
+  HRESULT STDMETHODCALLTYPE D3D11VkInteropBuffer::GetDevice(
+          IDXGIVkInteropDevice** ppDevice) {
+    Com<ID3D11Device> device;
+    m_resource->GetDevice(&device);
+
+    return device->QueryInterface(
+      __uuidof(IDXGIVkInteropDevice),
+      reinterpret_cast<void**>(ppDevice));
+  }
+
+
+  HRESULT STDMETHODCALLTYPE D3D11VkInteropBuffer::GetVulkanBufferInfo(
+          VkBuffer*           pBuffer,
+          VkDeviceSize*       pOffset,
+          VkDeviceSize*       pLength,
+          VkDeviceAddress*    pGpuAddress) {
+    Rc<DxvkBuffer> buffer = m_buffer->GetBuffer();
+    if (!buffer)
+      return E_FAIL;
+
+    if (!m_locked.load()) {
+      Com<ID3D11Device> device;
+      m_resource->GetDevice(&device);
+
+      static_cast<D3D11Device*>(device.ptr())->LockBuffer(buffer);
+
+      m_locked.store(true);
+    }
+
+    DxvkResourceBufferInfo slice = buffer->getSliceInfo();
+
+    if (pBuffer != nullptr)
+      *pBuffer = slice.buffer;
+
+    if (pOffset != nullptr)
+      *pOffset = slice.offset;
+
+    if (pLength != nullptr)
+      *pLength = slice.size;
+
+    if (pGpuAddress != nullptr)
+      *pGpuAddress = slice.gpuAddress;
+
+    return S_OK;
   }
   
 

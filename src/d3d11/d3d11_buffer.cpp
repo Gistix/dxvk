@@ -26,15 +26,21 @@ namespace dxvk {
                 | VK_ACCESS_TRANSFER_WRITE_BIT;
     
     if (pDesc->BindFlags & D3D11_BIND_VERTEX_BUFFER) {
-      info.usage  |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-      info.stages |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-      info.access |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+      info.usage  |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                  |  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+      info.stages |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+                  |  m_parent->GetEnabledShaderStages();
+      info.access |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+                  |  VK_ACCESS_SHADER_READ_BIT;
     }
     
     if (pDesc->BindFlags & D3D11_BIND_INDEX_BUFFER) {
-      info.usage  |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-      info.stages |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-      info.access |= VK_ACCESS_INDEX_READ_BIT;
+      info.usage  |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                  |  VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+      info.stages |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+                  |  m_parent->GetEnabledShaderStages();
+      info.access |= VK_ACCESS_INDEX_READ_BIT
+                  |  VK_ACCESS_SHADER_READ_BIT;
     }
 
     if ((pDesc->BindFlags & (D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_INDEX_BUFFER))

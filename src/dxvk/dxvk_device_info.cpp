@@ -78,6 +78,7 @@ namespace dxvk {
     HANDLE_EXT(nvDeviceDiagnosticCheckpoints);     \
     HANDLE_EXT(nvLowLatency2);                     \
     HANDLE_EXT(nvRawAccessChains);                 \
+    HANDLE_EXT(nvRayTracingInvocationReorder);     \
     HANDLE_EXT(nvxBinaryImport);                   \
     HANDLE_EXT(nvxImageViewHandle);
 
@@ -100,7 +101,8 @@ namespace dxvk {
     HANDLE_EXT(khrMaintenance7);                   \
     HANDLE_EXT(khrMaintenance9);                   \
     HANDLE_EXT(khrMaintenance10);                  \
-    HANDLE_EXT(khrRayTracingPipeline);
+    HANDLE_EXT(khrRayTracingPipeline);             \
+    HANDLE_EXT(nvRayTracingInvocationReorder);
 
 
   DxvkDeviceCapabilities::DxvkDeviceCapabilities(
@@ -650,7 +652,10 @@ namespace dxvk {
       m_featuresSupported.khrRayQuery.rayQuery = VK_FALSE;
     }
 
-    const bool crashAnalysis = instance.debugFlags().test(DxvkDebugFlag::CrashAnalysis);
+    // Invocation reorder requires ray tracing pipeline
+    if (!m_featuresSupported.khrRayTracingPipeline.rayTracingPipeline)
+      m_featuresSupported.nvRayTracingInvocationReorder.rayTracingInvocationReorder = VK_FALSE;
+
     if (!instance.debugFlags().test(DxvkDebugFlag::Hang)) {
       m_featuresSupported.khrDeviceFault.deviceFault = VK_FALSE;
       m_featuresSupported.khrDeviceFault.deviceFaultVendorBinary = VK_FALSE;
@@ -1052,6 +1057,9 @@ namespace dxvk {
       /* Ray tracing pipeline & ray query */
       ENABLE_EXT_FEATURE(khrRayTracingPipeline, rayTracingPipeline, false),
       ENABLE_EXT_FEATURE(khrRayQuery, rayQuery, false),
+
+      /* Ray tracing invocation reorder */
+      ENABLE_EXT_FEATURE(nvRayTracingInvocationReorder, rayTracingInvocationReorder, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

@@ -45,6 +45,7 @@ namespace dxvk {
     VkPhysicalDeviceMaintenance9PropertiesKHR                 khrMaintenance9                 = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_PROPERTIES_KHR };
     VkPhysicalDeviceMaintenance10PropertiesKHR                khrMaintenance10                = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_10_PROPERTIES_KHR };
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR           khrRayTracingPipeline           = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+    VkPhysicalDeviceRayTracingInvocationReorderPropertiesNV   nvRayTracingInvocationReorder   = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_PROPERTIES_NV };
   };
 
 
@@ -122,6 +123,7 @@ namespace dxvk {
     VkBool32                                                  nvDeviceDiagnosticCheckpoints   = VK_FALSE;
     VkBool32                                                  nvLowLatency2                   = VK_FALSE;
     VkPhysicalDeviceRawAccessChainsFeaturesNV                 nvRawAccessChains               = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV };
+    VkPhysicalDeviceRayTracingInvocationReorderFeaturesNV     nvRayTracingInvocationReorder   = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_INVOCATION_REORDER_FEATURES_NV };
     VkBool32                                                  nvxBinaryImport                 = VK_FALSE;
     VkBool32                                                  nvxImageViewHandle              = VK_FALSE;
   };
@@ -202,6 +204,7 @@ namespace dxvk {
     VkExtensionProperties nvDeviceDiagnosticCheckpoints     = vk::makeExtension(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
     VkExtensionProperties nvLowLatency2                     = vk::makeExtension(VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
     VkExtensionProperties nvRawAccessChains                 = vk::makeExtension(VK_NV_RAW_ACCESS_CHAINS_EXTENSION_NAME);
+    VkExtensionProperties nvRayTracingInvocationReorder     = vk::makeExtension(VK_NV_RAY_TRACING_INVOCATION_REORDER_EXTENSION_NAME);
     VkExtensionProperties nvxBinaryImport                   = vk::makeExtension(VK_NVX_BINARY_IMPORT_EXTENSION_NAME);
     VkExtensionProperties nvxImageViewHandle                = vk::makeExtension(VK_NVX_IMAGE_VIEW_HANDLE_EXTENSION_NAME);
   };

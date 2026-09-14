@@ -289,10 +289,12 @@ namespace dxvk {
     // then hands back an index that no longer fits. Guard the .at() accesses: a stale index is treated as
     // a soft out-of-date so this present is skipped and the swapchain recreated next frame, instead of
     // throwing std::out_of_range ("invalid vector subscript") and killing the present thread.
-    if (m_imageIndex >= m_images.size() || m_frameIndex >= m_semaphores.size())
+    if (m_imageIndex >= m_images.size() || m_frameIndex >= m_semaphores.size()
+     || m_imageIndex >= m_presentSemaphores.size())
       return softError(VK_ERROR_OUT_OF_DATE_KHR);
 
     sync = m_semaphores.at(m_frameIndex);
+    sync.present = m_presentSemaphores.at(m_imageIndex);
     image = m_images.at(m_imageIndex);
 
     m_presentPending = true;
@@ -305,6 +307,9 @@ namespace dxvk {
     const Rc<DxvkLatencyTracker>& tracker,
           uint32_t                rectCount,
     const VkRectLayerKHR*         rects) {
+    if (m_imageIndex >= m_presentSemaphores.size())
+      return softError(VK_ERROR_OUT_OF_DATE_KHR);
+
     PresenterSync& currSync = m_semaphores.at(m_frameIndex);
 
     VkPresentIdKHR presentId = { VK_STRUCTURE_TYPE_PRESENT_ID_KHR };
@@ -333,7 +338,7 @@ namespace dxvk {
 
     VkPresentInfoKHR info = { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     info.waitSemaphoreCount = 1;
-    info.pWaitSemaphores    = &currSync.present;
+    info.pWaitSemaphores    = &m_presentSemaphores.at(m_imageIndex);
     info.swapchainCount     = 1;
     info.pSwapchains        = &m_swapchain;
     info.pImageIndices      = &m_imageIndex;
@@ -1076,6 +1081,18 @@ namespace dxvk {
         return status;
       }
     }
+
+    m_presentSemaphores.resize(images.size());
+
+    for (uint32_t i = 0; i < images.size(); i++) {
+      VkSemaphoreCreateInfo semInfo = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+      if ((status = m_vkd->vkCreateSemaphore(m_vkd->device(),
+          &semInfo, nullptr, &m_presentSemaphores[i]))) {
+        Logger::err(str::format("Presenter: Failed to create present semaphore: ", status));
+        return status;
+      }
+    }
     
     // Invalidate indices
     m_latencySleepSupported = m_device->features().nvLowLatency2 && latencyInfo.latencyModeEnable;
@@ -1467,6 +1484,9 @@ namespace dxvk {
       return m_frameQueue.empty();
     });
 
+    for (const auto& sem : m_presentSemaphores)
+      m_vkd->vkDestroySemaphore(m_vkd->device(), sem, nullptr);
+
     for (const auto& sem : m_semaphores) {
       m_vkd->vkDestroySemaphore(m_vkd->device(), sem.acquire, nullptr);
       m_vkd->vkDestroySemaphore(m_vkd->device(), sem.present, nullptr);
@@ -1479,6 +1499,7 @@ namespace dxvk {
 
     m_images.clear();
     m_semaphores.clear();
+    m_presentSemaphores.clear();
     m_dynamicModes.clear();
 
     m_swapchain = VK_NULL_HANDLE;

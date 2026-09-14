@@ -45,6 +45,7 @@ namespace dxvk {
     HANDLE_EXT(extTransformFeedback);              \
     HANDLE_EXT(extVertexAttributeDivisor);         \
     HANDLE_EXT(khrAccelerationStructure);          \
+    HANDLE_EXT(khrComputeShaderDerivatives);       \
     HANDLE_EXT(khrDeferredHostOperations);         \
     HANDLE_EXT(khrDeviceFault);                    \
     HANDLE_EXT(khrDynamicRenderingLocalRead);      \
@@ -1060,6 +1061,10 @@ namespace dxvk {
 
       /* Ray tracing invocation reorder */
       ENABLE_EXT_FEATURE(nvRayTracingInvocationReorder, rayTracingInvocationReorder, false),
+
+      /* Compute shader derivatives */
+      ENABLE_EXT_FEATURE(khrComputeShaderDerivatives, computeDerivativeGroupQuads, false),
+      ENABLE_EXT_FEATURE(khrComputeShaderDerivatives, computeDerivativeGroupLinear, false),
 
       /* Hang debugging */
       ENABLE_EXT_FEATURE(khrDeviceFault, deviceFault, false),

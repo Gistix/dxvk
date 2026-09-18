@@ -35,6 +35,7 @@ namespace dxvk {
     HANDLE_EXT(extMemoryPriority);                 \
     HANDLE_EXT(extMultiDraw);                      \
     HANDLE_EXT(extNonSeamlessCubeMap);             \
+    HANDLE_EXT(extOpacityMicromap);                \
     HANDLE_EXT(extPageableDeviceLocalMemory);      \
     HANDLE_EXT(extRobustness2);                    \
     HANDLE_EXT(extSampleLocations);                \
@@ -92,6 +93,7 @@ namespace dxvk {
     HANDLE_EXT(extGraphicsPipelineLibrary);        \
     HANDLE_EXT(extLineRasterization);              \
     HANDLE_EXT(extMultiDraw);                      \
+    HANDLE_EXT(extOpacityMicromap);                \
     HANDLE_EXT(extRobustness2);                    \
     HANDLE_EXT(extSampleLocations);                \
     HANDLE_EXT(extTransformFeedback);              \
@@ -657,6 +659,10 @@ namespace dxvk {
     if (!m_featuresSupported.khrRayTracingPipeline.rayTracingPipeline)
       m_featuresSupported.nvRayTracingInvocationReorder.rayTracingInvocationReorder = VK_FALSE;
 
+    // Opacity micromap requires ray tracing pipeline
+    if (!m_featuresSupported.khrRayTracingPipeline.rayTracingPipeline)
+      m_featuresSupported.extOpacityMicromap.micromap = VK_FALSE;
+
     if (!instance.debugFlags().test(DxvkDebugFlag::Hang)) {
       m_featuresSupported.khrDeviceFault.deviceFault = VK_FALSE;
       m_featuresSupported.khrDeviceFault.deviceFaultVendorBinary = VK_FALSE;
@@ -1063,6 +1069,9 @@ namespace dxvk {
 
       /* Ray tracing invocation reorder */
       ENABLE_EXT_FEATURE(nvRayTracingInvocationReorder, rayTracingInvocationReorder, false),
+
+      /* Opacity micromap */
+      ENABLE_EXT_FEATURE(extOpacityMicromap, micromap, false),
 
       /* Compute shader derivatives */
       ENABLE_EXT_FEATURE(khrComputeShaderDerivatives, computeDerivativeGroupQuads, false),

@@ -23,6 +23,8 @@ namespace dxvk {
     disableNvLowLatency2  = config.getOption<Tristate>("dxvk.disableNvLowLatency2",   Tristate::Auto);
     hideIntegratedGraphics = config.getOption<bool>   ("dxvk.hideIntegratedGraphics", false);
     zeroMappedMemory      = config.getOption<bool>    ("dxvk.zeroMappedMemory",       false);
+    forceDedicatedImageAllocation = config.getOption<bool>("dxvk.forceDedicatedImageAllocation", true);
+    forceDedicatedMeshBufferAllocation = config.getOption<bool>("dxvk.forceDedicatedMeshBufferAllocation", true);
     // Fork: FSE default off. The FFX frame-gen wrap's inner swapchain never gets
     // FSE, so an FSE-acquired plain swapchain would present with different semantics, and
     // every FG toggle would pay an FSE re-acquisition recreate. Disallowing FSE everywhere

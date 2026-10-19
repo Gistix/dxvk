@@ -942,6 +942,13 @@ namespace dxvk {
           DxvkLocalAllocationCache*   allocationCache) {
     Rc<DxvkResourceAllocation> allocation;
 
+    bool isMeshBuffer = (createInfo.usage & (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                                          | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                                          | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR))
+                     && !(createInfo.usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
+                     && !(allocationInfo.properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    bool useDedicatedBuffer = m_device->config().forceDedicatedMeshBufferAllocation && isMeshBuffer;
+
     if (likely(!createInfo.flags)) {
       VkMemoryRequirements memoryRequirements = { };
       memoryRequirements.size = createInfo.size;
@@ -955,13 +962,13 @@ namespace dxvk {
         memoryRequirements.memoryTypeBits &= ~getMemoryTypeMask(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
       if (likely(memoryRequirements.memoryTypeBits)) {
-        bool allowSuballocation = true;
+        bool allowSuballocation = !useDedicatedBuffer;
 
         // If the given allocation cache supports the memory types and usage
         // flags that we need, try to use it to service this allocation.
         // Only use the allocation cache for mappable allocations since those
         // are expected to happen frequently.
-        if (allocationCache && createInfo.size <= DxvkLocalAllocationCache::MaxSize
+        if (allowSuballocation && allocationCache && createInfo.size <= DxvkLocalAllocationCache::MaxSize
          && allocationCache->m_memoryTypes && !(allocationCache->m_memoryTypes & ~memoryRequirements.memoryTypeBits)
          && (allocationInfo.properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
           allocation = allocationCache->allocateFromCache(createInfo.size);
@@ -1047,12 +1054,15 @@ namespace dxvk {
       // ca expect these to be long-lived and mapped, and potentially use a dedicated
       // memory type that may have unexpected size restrictions. Also make sure not
       // to ever relocate these buffers since they require a stable GPU address.
-      if (createInfo.usage & (DescriptorBufferUsage | DescriptorHeapUsage)) {
+      if ((createInfo.usage & (DescriptorBufferUsage | DescriptorHeapUsage))
+       || useDedicatedBuffer) {
         VkMemoryDedicatedAllocateInfo dedicatedInfo = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO };
         dedicatedInfo.buffer = buffer;
 
-        if ((allocation = allocateDedicatedMemory(requirements.memoryRequirements, allocationInfo, &dedicatedInfo)))
-          allocation->m_flags.clr(DxvkAllocationFlag::CanMove);
+        if ((allocation = allocateDedicatedMemory(requirements.memoryRequirements, allocationInfo, &dedicatedInfo))) {
+          if (createInfo.usage & (DescriptorBufferUsage | DescriptorHeapUsage))
+            allocation->m_flags.clr(DxvkAllocationFlag::CanMove);
+        }
       }
 
       // If we have an existing global allocation from earlier, make sure it is suitable
@@ -1066,7 +1076,14 @@ namespace dxvk {
         DxvkAllocationInfo fallbackInfo = allocationInfo;
         fallbackInfo.properties &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        allocation = allocateMemory(requirements.memoryRequirements, fallbackInfo);
+        if (useDedicatedBuffer) {
+          VkMemoryDedicatedAllocateInfo dedicatedInfo = { VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO };
+          dedicatedInfo.buffer = buffer;
+          allocation = allocateDedicatedMemory(requirements.memoryRequirements, fallbackInfo, &dedicatedInfo);
+        }
+
+        if (!allocation)
+          allocation = allocateMemory(requirements.memoryRequirements, fallbackInfo);
       }
 
       if (!allocation && allocationInfo.mode.isClear()) {
@@ -1149,6 +1166,9 @@ namespace dxvk {
     if (!dedicatedRequirements.requiresDedicatedAllocation && allocationInfo.mode.test(DxvkAllocationMode::NoDedicated))
       dedicatedRequirements.prefersDedicatedAllocation = VK_FALSE;
 
+    if (m_device->config().forceDedicatedImageAllocation)
+      dedicatedRequirements.prefersDedicatedAllocation = VK_TRUE;
+
     Rc<DxvkResourceAllocation> allocation;
 
     if (!(createInfo.flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT)) {
@@ -1167,7 +1187,7 @@ namespace dxvk {
 
         // Only retry with a dedicated sysmem allocation if a dedicated allocation
         // is required. Otherwise, we should try to suballocate in device memory.
-        if (!allocation && dedicatedRequirements.requiresDedicatedAllocation
+        if (!allocation && (dedicatedRequirements.requiresDedicatedAllocation || m_device->config().forceDedicatedImageAllocation)
          && !allocationInfo.mode.test(DxvkAllocationMode::NoFallback)
          && (allocationInfo.properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
           DxvkAllocationInfo fallbackInfo = allocationInfo;

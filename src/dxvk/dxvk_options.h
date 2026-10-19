@@ -64,6 +64,12 @@ namespace dxvk {
     /// Clears all mapped memory to zero.
     bool zeroMappedMemory = false;
 
+    /// Forces dedicated allocations for all images/textures
+    bool forceDedicatedImageAllocation = true;
+
+    /// Forces dedicated allocations for device-local mesh buffers (vertex/index)
+    bool forceDedicatedMeshBufferAllocation = true;
+
     /// Allows full-screen exclusive mode on Windows
     bool allowFse = false;
 

@@ -60,7 +60,8 @@ namespace dxvk {
   VkResult DxvkCommandSubmission::submit(
           DxvkDevice*           device,
           VkQueue               queue,
-          uint64_t              frameId) {
+          uint64_t              frameId,
+          VkFence               fence) {
     auto vk = device->vkd();
 
     VkLatencySubmissionPresentIdNV latencyInfo = { VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV };
@@ -88,8 +89,8 @@ namespace dxvk {
 
     VkResult vr = VK_SUCCESS;
 
-    if (!this->isEmpty())
-      vr = vk->vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    if (!this->isEmpty() || fence != VK_NULL_HANDLE)
+      vr = vk->vkQueueSubmit2(queue, 1, &submitInfo, fence);
 
     this->reset();
     return vr;
@@ -369,7 +370,7 @@ namespace dxvk {
         m_commandSubmission.signalSemaphore(semaphores.graphics,
           ++timelines.graphics, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT);
 
-        if ((status = m_commandSubmission.submit(m_device, graphics.queueHandle, trackedId)))
+        if ((status = m_commandSubmission.submit(m_device, graphics.queueHandle, trackedId, m_wsiSemaphores.fence)))
           return status;
       }
 

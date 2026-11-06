@@ -206,7 +206,7 @@ namespace dxvk {
 
     // Don't acquire if we already did so after present
     if (m_acquireStatus == VK_NOT_READY && m_swapchain) {
-      PresenterSync sync = m_semaphores.at(m_frameIndex);
+      PresenterSync& sync = m_semaphores.at(m_frameIndex);
 
       waitForSwapchainFence(sync);
 
@@ -232,7 +232,7 @@ namespace dxvk {
       if (vr != VK_SUCCESS)
         return softError(vr);
 
-      PresenterSync sync = m_semaphores.at(m_frameIndex);
+      PresenterSync& sync = m_semaphores.at(m_frameIndex);
 
       m_acquireStatus = m_vkd->vkAcquireNextImageKHR(m_vkd->device(),
         m_swapchain, std::numeric_limits<uint64_t>::max(),
@@ -373,16 +373,12 @@ namespace dxvk {
     // recreate the swapchain. Spec says that 'queue' operations, i.e. the
     // semaphore and fence signals, still happen if present fails with
     // normal swapchain errors, such as OUT_OF_DATE or SURFACE_LOST.
-    // No present fence was chained, so nothing will ever signal one: leave fenceSignaled clear
-    // so waitForSwapchainFence stays a no-op instead of blocking the next acquire forever.
-    if (false) {
-      currSync.fenceSignaled = status != VK_ERROR_OUT_OF_DEVICE_MEMORY
-                            && status != VK_ERROR_OUT_OF_HOST_MEMORY
-                            && status != VK_ERROR_DEVICE_LOST;
-
-      if (m_hasGamescopeFenceSignalBug)
-        currSync.fenceSignaled = status >= 0;
-    }
+    // The WSI fence is signaled by the graphics queue submission that completes
+    // the acquire semaphore wait, rather than via vkQueuePresentKHR, so it works
+    // reliably with or without an interposer.
+    currSync.fenceSignaled = status != VK_ERROR_OUT_OF_DEVICE_MEMORY
+                          && status != VK_ERROR_OUT_OF_HOST_MEMORY
+                          && status != VK_ERROR_DEVICE_LOST;
 
     if (status >= 0) {
       m_acquireStatus = VK_NOT_READY;

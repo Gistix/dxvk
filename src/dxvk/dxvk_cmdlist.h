@@ -133,7 +133,8 @@ namespace dxvk {
     VkResult submit(
             DxvkDevice*           device,
             VkQueue               queue,
-            uint64_t              frameId);
+            uint64_t              frameId,
+            VkFence               fence = VK_NULL_HANDLE);
 
     /**
      * \brief Resets object

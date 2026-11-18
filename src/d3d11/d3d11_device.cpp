@@ -3843,7 +3843,8 @@ namespace dxvk {
     }
     
     if (riid == __uuidof(IDXGIVkInteropDevice)
-     || riid == __uuidof(IDXGIVkInteropDevice1)) {
+     || riid == __uuidof(IDXGIVkInteropDevice1)
+     || riid == __uuidof(IDXGIVkInteropDevice2)) {
       *ppvObject = ref(&m_d3d11Interop);
       return S_OK;
     }

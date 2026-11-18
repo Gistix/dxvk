@@ -1,6 +1,7 @@
 #include "d3d11_context_imm.h"
 #include "d3d11_interop.h"
 #include "d3d11_device.h"
+#include "d3d11_fence.h"
 
 #include "../dxvk/dxvk_adapter.h"
 #include "../dxvk/dxvk_device.h"
@@ -99,6 +100,43 @@ namespace dxvk {
   }
   
   
+  HRESULT STDMETHODCALLTYPE D3D11VkInterop::GetExternalSubmissionQueue(
+          UINT                  Index,
+          VkQueue*              pQueue,
+          uint32_t*             pQueueIndex,
+          uint32_t*             pQueueFamilyIndex) {
+    if (Index >= DxvkMaxExternalQueues)
+      return E_NOTIMPL;
+
+    DxvkDeviceQueue queue = m_device->GetDXVKDevice()->queues().external[Index];
+
+    if (!queue.queueHandle)
+      return E_NOTIMPL;
+
+    if (pQueue != nullptr)
+      *pQueue = queue.queueHandle;
+
+    if (pQueueIndex != nullptr)
+      *pQueueIndex = queue.queueIndex;
+
+    if (pQueueFamilyIndex != nullptr)
+      *pQueueFamilyIndex = queue.queueFamily;
+
+    return S_OK;
+  }
+
+
+  HRESULT STDMETHODCALLTYPE D3D11VkInterop::GetFenceSemaphore(
+          ID3D11Fence*          pFence,
+          VkSemaphore*          pSemaphore) {
+    if (!pFence || !pSemaphore)
+      return E_INVALIDARG;
+
+    *pSemaphore = static_cast<D3D11Fence*>(pFence)->GetFence()->handle();
+    return S_OK;
+  }
+
+
   void STDMETHODCALLTYPE D3D11VkInterop::GetSubmissionQueue1(
           VkQueue*              pQueue,
           uint32_t*             pQueueIndex,

@@ -464,6 +464,49 @@ IDXGIVkInteropDevice1 : public IDXGIVkInteropDevice {
           ID3D11Texture2D**     ppTexture2D) = 0;
 };
 
+struct ID3D11Fence;
+
+/**
+ * \brief See IDXGIVkInteropDevice.
+ *
+ * Lets an external renderer submit on its own queue instead of locking
+ * DXVK's, synchronising with D3D11 work through ID3D11Fence objects.
+ */
+MIDL_INTERFACE("e2ef5fa5-dc21-4af7-90c4-f67ef6a09325")
+IDXGIVkInteropDevice2 : public IDXGIVkInteropDevice1 {
+  /**
+   * \brief Queries a queue reserved for external renderers
+   *
+   * Extra queues in the graphics queue family that DXVK never submits to.
+   * Each index is a distinct queue; whoever claims an index owns all
+   * submission to it and needs no submission lock, but two components
+   * must never share an index without their own synchronisation.
+   * \param [in] Index Which reserved queue, starting at 0
+   * \param [out] pQueue The Vulkan queue handle
+   * \param [out] pQueueIndex Queue index within the family
+   * \param [out] pQueueFamilyIndex Queue family index
+   * \returns \c S_OK, or \c E_NOTIMPL if the device has no queue at \p Index
+   */
+  virtual HRESULT STDMETHODCALLTYPE GetExternalSubmissionQueue(
+          UINT                  Index,
+          VkQueue*              pQueue,
+          uint32_t*             pQueueIndex,
+          uint32_t*             pQueueFamilyIndex) = 0;
+
+  /**
+   * \brief Queries the timeline semaphore backing a D3D11 fence
+   *
+   * The semaphore's payload is the fence value, so external submissions
+   * can wait on ID3D11DeviceContext4::Signal and signal values waited on
+   * by ID3D11DeviceContext4::Wait. Owned by the fence; do not destroy it.
+   * \param [in] pFence Fence created by this device
+   * \param [out] pSemaphore The Vulkan timeline semaphore
+   */
+  virtual HRESULT STDMETHODCALLTYPE GetFenceSemaphore(
+          ID3D11Fence*          pFence,
+          VkSemaphore*          pSemaphore) = 0;
+};
+
 /**
  * \brief DXGI adapter interface for Vulkan interop
  *
@@ -523,6 +566,7 @@ __CRT_UUID_DECL(IDXGIVkInteropFactory1,    0x2a289dbd,0x2d0a,0x4a51,0x89,0xf7,0x
 __CRT_UUID_DECL(IDXGIVkInteropAdapter,     0x3a6d8f2c,0xb0e8,0x4ab4,0xb4,0xdc,0x4f,0xd2,0x48,0x91,0xbf,0xa5);
 __CRT_UUID_DECL(IDXGIVkInteropDevice,      0xe2ef5fa5,0xdc21,0x4af7,0x90,0xc4,0xf6,0x7e,0xf6,0xa0,0x93,0x23);
 __CRT_UUID_DECL(IDXGIVkInteropDevice1,     0xe2ef5fa5,0xdc21,0x4af7,0x90,0xc4,0xf6,0x7e,0xf6,0xa0,0x93,0x24);
+__CRT_UUID_DECL(IDXGIVkInteropDevice2,     0xe2ef5fa5,0xdc21,0x4af7,0x90,0xc4,0xf6,0x7e,0xf6,0xa0,0x93,0x25);
 __CRT_UUID_DECL(IDXGIVkInteropSurface,     0x5546cf8c,0x77e7,0x4341,0xb0,0x5d,0x8d,0x4d,0x50,0x00,0xe7,0x7d);
 __CRT_UUID_DECL(IDXGIVkInteropBuffer,      0xb7b13df1,0x5364,0x4e94,0x81,0xd3,0x6e,0x3e,0x5c,0x9f,0x91,0xa0);
 __CRT_UUID_DECL(IDXGIVkSurfaceFactory,     0x1e7895a1,0x1bc3,0x4f9c,0xa6,0x70,0x29,0x0a,0x4b,0xc9,0x58,0x1a);

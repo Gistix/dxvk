@@ -236,10 +236,20 @@ namespace dxvk {
   /**
    * \brief Queue mapping
    */
+  /**
+   * \brief Number of graphics-family queues reserved for external renderers
+   */
+  constexpr uint32_t DxvkMaxExternalQueues = 2u;
+
+
   struct DxvkDeviceQueueMapping {
     DxvkDeviceQueueIndex graphics;
     DxvkDeviceQueueIndex transfer;
     DxvkDeviceQueueIndex sparse;
+    /// Extra graphics-family queues reserved for external renderers, so
+    /// they never have to submit to (and lock) DXVK's own queue. Entries
+    /// the hardware cannot provide keep VK_QUEUE_FAMILY_IGNORED.
+    DxvkDeviceQueueIndex external[DxvkMaxExternalQueues];
   };
 
 

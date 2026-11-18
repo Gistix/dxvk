@@ -227,6 +227,11 @@ namespace dxvk {
            << "  Transfer : (" << m_queueMapping.transfer.family << ", " << m_queueMapping.transfer.index << ")" << std::endl
            << "  Sparse   : (" << m_queueMapping.sparse.family   << ", " << m_queueMapping.sparse.index   << ")" << std::endl;
 
+    for (uint32_t i = 0u; i < DxvkMaxExternalQueues; i++) {
+      stream << "  External " << i << ": (" << m_queueMapping.external[i].family
+             << ", " << m_queueMapping.external[i].index << ")" << std::endl;
+    }
+
     // Log memory type and heap properties
     static const std::array<std::pair<VkMemoryPropertyFlagBits, const char*>, 8> s_flags = {{
       { VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,        "DEVICE_LOCAL"        },
@@ -736,10 +741,24 @@ namespace dxvk {
         VK_QUEUE_SPARSE_BINDING_BIT);
     }
 
+    // Reserve graphics-family queues 1..N for external renderers, as many as the
+    // hardware offers up to DxvkMaxExternalQueues. Same family, so shared
+    // resources need no queue family ownership transfers.
+    const uint32_t externalCount = std::min(
+      graphicsQueue.queueFamilyProperties.queueCount - 1u, DxvkMaxExternalQueues);
+
+    for (uint32_t i = 0u; i < externalCount; i++) {
+      m_queueMapping.external[i].family = m_queueMapping.graphics.family;
+      m_queueMapping.external[i].index = i + 1u;
+    }
+
     // Actually enable all the queues
     enableQueue(m_queueMapping.graphics);
     enableQueue(m_queueMapping.transfer);
     enableQueue(m_queueMapping.sparse);
+
+    for (const auto& external : m_queueMapping.external)
+      enableQueue(external);
 
     // Fix up queue priority pointers
     uint32_t maxQueueCount = 0u;
@@ -761,7 +780,8 @@ namespace dxvk {
 
     for (auto& q : m_queuesEnabled) {
       if (q.queueFamilyIndex == queue.family) {
-        q.queueCount = queue.index + 1u;
+        // Several mappings can share a family; never shrink its queue count
+        q.queueCount = std::max(q.queueCount, queue.index + 1u);
         return;
       }
     }

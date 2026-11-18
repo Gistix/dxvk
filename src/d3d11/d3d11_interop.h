@@ -8,7 +8,7 @@ namespace dxvk {
 
   class D3D11Device;
   
-  class D3D11VkInterop : public ComObject<IDXGIVkInteropDevice1> {
+  class D3D11VkInterop : public ComObject<IDXGIVkInteropDevice2> {
     
   public:
     
@@ -56,7 +56,17 @@ namespace dxvk {
             const D3D11_TEXTURE2D_DESC1* pDesc,
             VkImage                      vkImage,
             ID3D11Texture2D**            ppTexture2D);
-    
+
+    HRESULT STDMETHODCALLTYPE GetExternalSubmissionQueue(
+            UINT                  Index,
+            VkQueue*              pQueue,
+            uint32_t*             pQueueIndex,
+            uint32_t*             pQueueFamilyIndex);
+
+    HRESULT STDMETHODCALLTYPE GetFenceSemaphore(
+            ID3D11Fence*          pFence,
+            VkSemaphore*          pSemaphore);
+
   private:
     
     IDXGIObject* m_container;
